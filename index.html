@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Universal Recipe Scaler</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>Universal Recipe Scaler</h1>
+            <p>Scale your ingredients with precision.</p>
+        </header>
+
+        <main class="content-grid">
+            <section class="scaler-section">
+                <div class="controls-card glass-panel">
+                    <div class="scale-buttons">
+                        <button class="scale-btn" data-scale="0.5">0.5x</button>
+                        <button class="scale-btn" data-scale="1">1x</button>
+                        <button class="scale-btn" data-scale="2">2x</button>
+                        <button class="scale-btn" data-scale="3">3x</button>
+                    </div>
+                    
+                    <div class="custom-scale">
+                        <div class="input-group">
+                            <label for="original-servings">Original Servings</label>
+                            <input type="number" id="original-servings" value="4" min="1" step="1">
+                        </div>
+                        <div class="input-group">
+                            <label for="target-servings">Target Servings</label>
+                            <input type="number" id="target-servings" value="4" min="1" step="1">
+                        </div>
+                        <button id="apply-custom-scale" class="primary-btn">Scale</button>
+                    </div>
+                </div>
+
+                <div class="recipe-workarea">
+                    <div class="input-area">
+                        <label for="recipe-input">Paste Ingredients Here</label>
+                        <textarea id="recipe-input" placeholder="1.5 tbsp butter&#10;1/2 cup red wine&#10;2 cloves garlic..."></textarea>
+                    </div>
+                    
+                    <div class="output-area glass-panel">
+                        <h2>Scaled Recipe (<span id="current-multiplier-display">1x</span>)</h2>
+                        <div id="recipe-output" class="scaled-results">
+                            <p class="placeholder-text">Your scaled ingredients will appear here...</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <aside class="sidebar glass-panel">
+                <h2>Recommended Gear</h2>
+                <div class="gear-list">
+                    <div class="gear-item">
+                        <div class="gear-img-placeholder knife-placeholder"></div>
+                        <div class="gear-info">
+                            <h3>High-End Chef's Knife</h3>
+                            <p>Precision forged 8-inch carbon steel blade for effortless prep.</p>
+                        </div>
+                    </div>
+                    <div class="gear-item">
+                        <div class="gear-img-placeholder pan-placeholder"></div>
+                        <div class="gear-info">
+                            <h3>Heavy-Duty Cast Iron Pan</h3>
+                            <p>12-inch pre-seasoned pan for perfect searing and baking.</p>
+                        </div>
+                    </div>
+                    <div class="gear-item">
+                        <div class="gear-img-placeholder scale-placeholder"></div>
+                        <div class="gear-info">
+                            <h3>Digital Kitchen Scale</h3>
+                            <p>High-precision measurement up to 10kg with tare function.</p>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
