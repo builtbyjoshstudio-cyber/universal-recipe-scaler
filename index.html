@@ -27,16 +27,27 @@
                         <button class="scale-btn" data-scale="3">3x</button>
                     </div>
                     
-                    <div class="custom-scale">
-                        <div class="input-group">
-                            <label for="original-servings">Original Servings</label>
-                            <input type="number" id="original-servings" value="4" min="1" step="1">
+                    <div class="custom-scale-wrapper" style="display: flex; gap: 2rem; align-items: center; flex-wrap: wrap;">
+                        <div class="custom-scale">
+                            <div class="input-group">
+                                <label for="original-servings">Original Servings</label>
+                                <input type="number" id="original-servings" value="4" min="1" step="1">
+                            </div>
+                            <div class="input-group">
+                                <label for="target-servings">Target Servings</label>
+                                <input type="number" id="target-servings" value="4" min="1" step="1">
+                            </div>
+                            <button id="apply-custom-scale" class="primary-btn">Scale</button>
                         </div>
-                        <div class="input-group">
-                            <label for="target-servings">Target Servings</label>
-                            <input type="number" id="target-servings" value="4" min="1" step="1">
+                        
+                        <div class="unit-toggle-container">
+                            <span class="unit-label">US</span>
+                            <label class="switch">
+                                <input type="checkbox" id="unit-toggle">
+                                <span class="slider round"></span>
+                            </label>
+                            <span class="unit-label">Metric</span>
                         </div>
-                        <button id="apply-custom-scale" class="primary-btn">Scale</button>
                     </div>
                 </div>
 
@@ -50,6 +61,10 @@
                         <h2>Scaled Recipe (<span id="current-multiplier-display">1x</span>)</h2>
                         <div id="recipe-output" class="scaled-results">
                             <p class="placeholder-text">Your scaled ingredients will appear here...</p>
+                        </div>
+                        <div class="action-buttons">
+                            <button id="copy-btn" class="action-btn">Copy to Clipboard</button>
+                            <button id="print-btn" class="action-btn">Print Recipe</button>
                         </div>
                     </div>
                 </div>

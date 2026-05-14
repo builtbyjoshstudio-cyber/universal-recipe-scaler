@@ -35,10 +35,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const originalServings = document.getElementById('original-servings');
     const targetServings = document.getElementById('target-servings');
     const currentMultiplierDisplay = document.getElementById('current-multiplier-display');
+    const unitToggle = document.getElementById('unit-toggle');
+    const copyBtn = document.getElementById('copy-btn');
+    const printBtn = document.getElementById('print-btn');
 
     let currentMultiplier = 1;
 
-    // Parse string to float (handles basic fractions like 1/2, 1 1/4)
+    // Load saved recipe from local storage
+    const savedRecipe = localStorage.getItem('savedRecipe');
+    if (savedRecipe) {
+        recipeInput.value = savedRecipe;
+    }
+
+    // Parse string to float
     function parseNumber(str) {
         str = str.trim();
         if (str.includes('/')) {
@@ -54,23 +63,19 @@ document.addEventListener('DOMContentLoaded', () => {
         return parseFloat(str);
     }
 
-    // Float to readable fraction
+    // Float to readable fraction (approximating to practical cooking measurements)
     function toFraction(num) {
         if (isNaN(num) || num <= 0) return '';
         
         const tolerance = 1.0E-6;
-        
         const fractions = [
             { val: 0, text: '' },
-            { val: 1/8, text: '1/8' },
             { val: 1/4, text: '1/4' },
             { val: 1/3, text: '1/3' },
-            { val: 3/8, text: '3/8' },
             { val: 1/2, text: '1/2' },
-            { val: 5/8, text: '5/8' },
             { val: 2/3, text: '2/3' },
             { val: 3/4, text: '3/4' },
-            { val: 7/8, text: '7/8' }
+            { val: 1, text: '' } // handle rounding up to next whole
         ];
 
         let whole = Math.floor(num + tolerance);
@@ -92,7 +97,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        if (minDiff > 0.05) {
+        if (closestFraction.val === 1) {
+            whole += 1;
+            closestFraction = fractions[0];
+        }
+
+        if (minDiff > 0.1) {
+            // If it doesn't cleanly round to a practical cooking fraction, try to just show sensible decimals.
             let res = Number.isInteger(num) ? num.toString() : num.toFixed(2).replace(/\.00$/, '');
             return res;
         }
@@ -110,58 +121,105 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function scaleRecipe() {
         const text = recipeInput.value;
+        localStorage.setItem('savedRecipe', text);
+
         if (!text.trim()) {
             recipeOutput.innerHTML = '<p class="placeholder-text">Your scaled ingredients will appear here...</p>';
             return;
         }
 
-        // Regex to match numbers, including fractions at the start of ingredient lines
-        const numberRegex = /^(\s*)(\d+\s+\d+\/\d+|\d+\/\d+|\d*\.\d+|\d+)/;
-        
+        const convertToMetric = unitToggle ? unitToggle.checked : false;
         const lines = text.split('\n');
-        let scaledLines = lines.map(line => {
-            // First let's check for standard quantities at the start of the line
-            let match = numberRegex.exec(line);
+        
+        recipeOutput.innerHTML = ''; // Clear previous output
+
+        const unitRegex = /(\d+\s+\d+\/\d+|\d+\/\d+|\d*\.\d+|\d+)\s*(cups?|tbsp|tsp|fl\s*oz|oz|grams?|g|ml|lbs?|pinch|dash|cloves?|pieces?)/i;
+        const numberRegex = /^(\s*)(\d+\s+\d+\/\d+|\d+\/\d+|\d*\.\d+|\d+)/;
+
+        lines.forEach(line => {
+            if (!line.trim()) {
+                recipeOutput.appendChild(document.createElement('br'));
+                return;
+            }
+
+            let processedLine = line;
+            let unitMatch = unitRegex.exec(line);
             
-            if (match) {
-                const spaces = match[1];
-                const originalNumStr = match[2];
-                const num = parseNumber(originalNumStr);
+            if (unitMatch) {
+                const originalNumStr = unitMatch[1];
+                let num = parseNumber(originalNumStr);
+                let unitStr = unitMatch[2];
+                let unit = unitStr.toLowerCase();
                 
                 if (!isNaN(num)) {
-                    const scaledNum = num * currentMultiplier;
-                    const fractionStr = toFraction(scaledNum);
+                    let scaledNum = num * currentMultiplier;
+                    let outUnit = unitStr;
+                    let useFraction = true;
+
+                    if (convertToMetric) {
+                        if (unit === 'cup' || unit === 'cups') { scaledNum *= 240; outUnit = 'ml'; useFraction = false; }
+                        else if (unit === 'tbsp') { scaledNum *= 15; outUnit = 'ml'; useFraction = false; }
+                        else if (unit === 'tsp') { scaledNum *= 5; outUnit = 'ml'; useFraction = false; }
+                        else if (unit === 'oz') { scaledNum *= 28.35; outUnit = 'g'; useFraction = false; }
+                        else if (unit === 'fl oz' || unit === 'fl. oz.') { scaledNum *= 29.57; outUnit = 'ml'; useFraction = false; }
+                        else if (unit === 'lb' || unit === 'lbs') { scaledNum *= 453.59; outUnit = 'g'; useFraction = false; }
+                        
+                        if (!useFraction) scaledNum = Math.round(scaledNum);
+                    } else {
+                        // Metric to US Customary
+                        if (unit === 'ml') {
+                            let cups = scaledNum / 240;
+                            if (cups >= 0.25) { scaledNum = cups; outUnit = scaledNum <= 1 ? 'cup' : 'cups'; }
+                            else {
+                                let tbsp = scaledNum / 15;
+                                if (tbsp >= 0.5) { scaledNum = tbsp; outUnit = 'tbsp'; }
+                                else { scaledNum = scaledNum / 5; outUnit = 'tsp'; }
+                            }
+                        } else if (unit === 'g' || unit === 'gram' || unit === 'grams') {
+                            scaledNum /= 28.35; outUnit = 'oz';
+                        }
+                    }
+
+                    let valStr = useFraction ? toFraction(scaledNum) : scaledNum.toString();
                     
-                    const after = line.substring(match[0].length);
-                    return `${spaces}<span class="highlight">${fractionStr}</span>${after}`;
+                    const before = line.substring(0, unitMatch.index);
+                    const after = line.substring(unitMatch.index + originalNumStr.length + unitStr.length);
+                    processedLine = `${before}<span class="highlight">${valStr} ${outUnit}</span>${after}`;
                 }
             } else {
-                // If there's no number at the very start, let's try a more general scan for numbers followed by units
-                // e.g. "Salt, 1 tsp"
-                const unitRegex = /(\d+\s+\d+\/\d+|\d+\/\d+|\d*\.\d+|\d+)\s*(cups?|tbsp|tsp|oz|grams?|g|ml|lbs?|pinch|dash|cloves?|pieces?)/i;
-                let unitMatch = unitRegex.exec(line);
-                if (unitMatch) {
-                    const originalNumStr = unitMatch[1];
-                    const num = parseNumber(originalNumStr);
+                let match = numberRegex.exec(line);
+                if (match) {
+                    const spaces = match[1];
+                    const num = parseNumber(match[2]);
                     if (!isNaN(num)) {
-                        const scaledNum = num * currentMultiplier;
-                        const fractionStr = toFraction(scaledNum);
-                        
-                        const before = line.substring(0, unitMatch.index);
-                        const after = line.substring(unitMatch.index + originalNumStr.length);
-                        return `${before}<span class="highlight">${fractionStr}</span>${after}`;
+                        const fractionStr = toFraction(num * currentMultiplier);
+                        const after = line.substring(match[0].length);
+                        processedLine = `${spaces}<span class="highlight">${fractionStr}</span>${after}`;
                     }
                 }
             }
-            
-            return line;
-        });
 
-        recipeOutput.innerHTML = scaledLines.join('<br>');
+            // Create interactive checkbox row
+            const label = document.createElement('label');
+            label.className = 'recipe-line';
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            
+            const span = document.createElement('span');
+            span.className = 'recipe-text';
+            span.innerHTML = processedLine;
+            
+            label.appendChild(checkbox);
+            label.appendChild(span);
+            
+            recipeOutput.appendChild(label);
+        });
     }
 
     // Event Listeners
     recipeInput.addEventListener('input', scaleRecipe);
+    if (unitToggle) unitToggle.addEventListener('change', scaleRecipe);
 
     scaleButtons.forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -190,10 +248,28 @@ document.addEventListener('DOMContentLoaded', () => {
             scaleRecipe();
         }
     });
+
+    if (copyBtn) {
+        copyBtn.addEventListener('click', () => {
+            const lines = document.querySelectorAll('.recipe-text');
+            const textToCopy = Array.from(lines).map(l => l.innerText).join('\n');
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const origText = copyBtn.textContent;
+                copyBtn.textContent = 'Copied!';
+                setTimeout(() => copyBtn.textContent = origText, 2000);
+            });
+        });
+    }
+
+    if (printBtn) {
+        printBtn.addEventListener('click', () => {
+            window.print();
+        });
+    }
     
     // Initial active state
     document.querySelector('.scale-btn[data-scale="1"]').classList.add('active');
     
-    // Trigger initial scale just in case there's text (e.g. browser reload preserved it)
+    // Trigger initial scale
     scaleRecipe();
 });
