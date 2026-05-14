@@ -300,25 +300,25 @@ textarea:focus {
 .gear-list {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1rem;
 }
 
 .gear-item {
     display: flex;
     flex-direction: column;
     gap: 0.8rem;
-    padding-bottom: 1.5rem;
-    border-bottom: 1px solid var(--border-light);
-    transition: transform 0.2s ease;
+    padding: 1rem;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    text-decoration: none;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease, background 0.3s ease;
 }
 
 .gear-item:hover {
-    transform: translateY(-2px);
-}
-
-.gear-item:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px var(--bg-grad-1);
+    border-color: var(--border-light);
+    background: rgba(128, 128, 128, 0.05);
 }
 
 .gear-img-placeholder {
@@ -377,4 +377,24 @@ textarea:focus {
     .custom-scale {
         justify-content: center;
     }
+}
+
+.affiliate-btn {
+    margin-top: 0.5rem;
+    background: #f5a623;
+    color: #000;
+    border: none;
+    padding: 0.6rem 1rem;
+    border-radius: 6px;
+    font-weight: 700;
+    font-family: var(--font-family);
+    cursor: pointer;
+    text-align: center;
+    transition: background 0.2s ease, transform 0.2s ease;
+    width: 100%;
+}
+
+.affiliate-btn:hover {
+    background: #d48e1b;
+    transform: scale(1.02);
 }
