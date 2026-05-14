@@ -133,8 +133,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         recipeOutput.innerHTML = ''; // Clear previous output
 
-        const unitRegex = /(\d+\s+\d+\/\d+|\d+\/\d+|\d*\.\d+|\d+)\s*(cups?|tablespoons?|tbsps?\.?|teaspoons?|tsps?\.?|fluid\s*ounces?|fl\.?\s*oz\.?|ounces?|ozs?\.?|grams?|g\.?|milliliters?|ml\.?|pounds?|lbs?\.?|pinch(?:es)?|dash(?:es)?|cloves?|pieces?)\b/gi;
-        const startNumberRegex = /^(\s*)(\d+\s+\d+\/\d+|\d+\/\d+|\d*\.\d+|\d+)(?!\s*(?:cups?|tablespoons?|tbsps?\.?|teaspoons?|tsps?\.?|fluid\s*ounces?|fl\.?\s*oz\.?|ounces?|ozs?\.?|grams?|g\.?|milliliters?|ml\.?|pounds?|lbs?\.?|pinch(?:es)?|dash(?:es)?|cloves?|pieces?)\b)/i;
+        const unitRegex = /(\d+\s+\d+\/\d+|\d+\/\d+|\d*\.\d+|\d+)\s*(cups?|c\.?|tablespoons?|tbsps?\.?|teaspoons?|tsps?\.?|fluid\s*ounces?|fl\.?\s*oz\.?|ounces?|ozs?\.?|grams?|g\.?|milliliters?|ml\.?|pounds?|lbs?\.?|pinch(?:es)?|dash(?:es)?|cloves?|pieces?)\b/gi;
+        const startNumberRegex = /^(\s*)(\d+\s+\d+\/\d+|\d+\/\d+|\d*\.\d+|\d+)(?!\s*(?:cups?|c\.?|tablespoons?|tbsps?\.?|teaspoons?|tsps?\.?|fluid\s*ounces?|fl\.?\s*oz\.?|ounces?|ozs?\.?|grams?|g\.?|milliliters?|ml\.?|pounds?|lbs?\.?|pinch(?:es)?|dash(?:es)?|cloves?|pieces?)\b)/i;
 
         lines.forEach(line => {
             if (!line.trim()) {
@@ -155,11 +155,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 let useFraction = true;
 
                 // Normalize unit for conversion logic
-                let isCup = /^(cups?)$/.test(unit);
+                let isCup = /^(cups?|c\.?)$/.test(unit);
                 let isTbsp = /^(tablespoons?|tbsps?\.?)$/.test(unit);
                 let isTsp = /^(teaspoons?|tsps?\.?)$/.test(unit);
-                let isOz = /^(ounces?|ozs?\.?)$/.test(unit);
-                let isFlOz = /^(fluid\s*ounces?|fl\.?\s*oz\.?)$/.test(unit);
+                let isOz = /^(ounces?|ozs?\.?|fluid\s*ounces?|fl\.?\s*oz\.?)$/.test(unit);
                 let isLb = /^(pounds?|lbs?\.?)$/.test(unit);
                 let isG = /^(grams?|g\.?)$/.test(unit);
                 let isMl = /^(milliliters?|ml\.?)$/.test(unit);
@@ -169,10 +168,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     else if (isTbsp) { scaledNum *= 15; outUnit = 'ml'; useFraction = false; }
                     else if (isTsp) { scaledNum *= 5; outUnit = 'ml'; useFraction = false; }
                     else if (isOz) { scaledNum *= 28.35; outUnit = 'g'; useFraction = false; }
-                    else if (isFlOz) { scaledNum *= 29.57; outUnit = 'ml'; useFraction = false; }
-                    else if (isLb) { scaledNum *= 453.59; outUnit = 'g'; useFraction = false; }
+                    else if (isLb) { 
+                        scaledNum *= 454; 
+                        if (scaledNum >= 1000) {
+                            scaledNum /= 1000;
+                            outUnit = 'kg';
+                        } else {
+                            outUnit = 'g';
+                        }
+                        useFraction = false; 
+                    }
                     
-                    if (!useFraction) scaledNum = Math.round(scaledNum);
+                    if (!useFraction) {
+                        if (outUnit === 'kg') {
+                            scaledNum = Number(scaledNum.toFixed(2));
+                        } else {
+                            scaledNum = Math.round(scaledNum);
+                        }
+                    }
                 } else {
                     // Metric to US Customary
                     if (isMl) {
@@ -183,7 +196,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (tbsp >= 0.5) { scaledNum = tbsp; outUnit = 'tbsp'; }
                             else { scaledNum = scaledNum / 5; outUnit = 'tsp'; }
                         }
-                    } else if (isG) {
+                    } else if (isG || unit === 'kg') {
+                        if (unit === 'kg') scaledNum *= 1000;
                         scaledNum /= 28.35; outUnit = 'oz';
                     }
                 }
