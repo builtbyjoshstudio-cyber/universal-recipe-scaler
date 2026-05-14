@@ -133,8 +133,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         recipeOutput.innerHTML = ''; // Clear previous output
 
-        const unitRegex = /(\d+\s+\d+\/\d+|\d+\/\d+|\d*\.\d+|\d+)\s*(quarts?|qts?\.?|pints?|pts?\.?|cups?|c\.?|tablespoons?|tbsps?\.?|teaspoons?|tsps?\.?|fluid\s*ounces?|fl\.?\s*oz\.?|ounces?|ozs?\.?|grams?|g\.?|milliliters?|ml\.?|pounds?|lbs?\.?|pinch(?:es)?|dash(?:es)?|cloves?|pieces?)\b/gi;
-        const startNumberRegex = /^(\s*)(\d+\s+\d+\/\d+|\d+\/\d+|\d*\.\d+|\d+)(?!\s*(?:quarts?|qts?\.?|pints?|pts?\.?|cups?|c\.?|tablespoons?|tbsps?\.?|teaspoons?|tsps?\.?|fluid\s*ounces?|fl\.?\s*oz\.?|ounces?|ozs?\.?|grams?|g\.?|milliliters?|ml\.?|pounds?|lbs?\.?|pinch(?:es)?|dash(?:es)?|cloves?|pieces?)\b)/i;
+        const unitRegex = /(\d+\s+\d+\/\d+|\d+\/\d+|\d*\.\d+|\d+)\s*(cups?|c\.?|tablespoons?|tbsps?\.?|teaspoons?|tsps?\.?|fluid\s*ounces?|fl\.?\s*oz\.?|ounces?|ozs?\.?|grams?|g\.?|milliliters?|ml\.?|pounds?|lbs?\.?|quarts?|qts?\.?|pints?|pts?\.?|gallons?|gals?\.?|°?f|fahrenheit|inches|inch|in\.?|pinch(?:es)?|dash(?:es)?|cloves?|pieces?)\b/gi;
+        const startNumberRegex = /^(\s*)(\d+\s+\d+\/\d+|\d+\/\d+|\d*\.\d+|\d+)(?!\s*(?:cups?|c\.?|tablespoons?|tbsps?\.?|teaspoons?|tsps?\.?|fluid\s*ounces?|fl\.?\s*oz\.?|ounces?|ozs?\.?|grams?|g\.?|milliliters?|ml\.?|pounds?|lbs?\.?|quarts?|qts?\.?|pints?|pts?\.?|gallons?|gals?\.?|°?f|fahrenheit|inches|inch|in\.?|pinch(?:es)?|dash(?:es)?|cloves?|pieces?)\b)/i;
 
         lines.forEach(line => {
             if (!line.trim()) {
@@ -150,49 +150,70 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (isNaN(num)) return match;
 
                 let unit = unitStr.toLowerCase();
-                let scaledNum = num * currentMultiplier;
+                let isF = /^(°?f|fahrenheit)$/.test(unit);
+                let isIn = /^(inches|inch|in\.?)$/.test(unit);
+
+                // Multiplier conditionally applied
+                let scaledNum = num;
+                if (!isF && !isIn) {
+                    scaledNum = num * currentMultiplier;
+                }
+
                 let outUnit = unitStr; // preserve original case if possible
                 let useFraction = true;
 
                 // Normalize unit for conversion logic
                 let isQt = /^(quarts?|qts?\.?)$/.test(unit);
                 let isPt = /^(pints?|pts?\.?)$/.test(unit);
+                let isGal = /^(gallons?|gals?\.?)$/.test(unit);
                 let isCup = /^(cups?|c\.?)$/.test(unit);
                 let isTbsp = /^(tablespoons?|tbsps?\.?)$/.test(unit);
                 let isTsp = /^(teaspoons?|tsps?\.?)$/.test(unit);
-                let isOz = /^(ounces?|ozs?\.?|fluid\s*ounces?|fl\.?\s*oz\.?)$/.test(unit);
+                let isOz = /^(ounces?|ozs?\.?)$/.test(unit);
+                let isFlOz = /^(fluid\s*ounces?|fl\.?\s*oz\.?)$/.test(unit);
                 let isLb = /^(pounds?|lbs?\.?)$/.test(unit);
                 let isG = /^(grams?|g\.?)$/.test(unit);
                 let isMl = /^(milliliters?|ml\.?)$/.test(unit);
 
                 if (convertToMetric) {
-                    if (isQt) {
-                        scaledNum *= 946;
-                        if (scaledNum >= 1000) { scaledNum /= 1000; outUnit = 'L'; }
-                        else { outUnit = 'ml'; }
-                        useFraction = false;
-                    }
-                    else if (isPt) { scaledNum *= 473; outUnit = 'ml'; useFraction = false; }
-                    else if (isCup) { scaledNum *= 240; outUnit = 'ml'; useFraction = false; }
+                    if (isTsp) { scaledNum *= 5; outUnit = 'ml'; useFraction = false; }
                     else if (isTbsp) { scaledNum *= 15; outUnit = 'ml'; useFraction = false; }
-                    else if (isTsp) { scaledNum *= 5; outUnit = 'ml'; useFraction = false; }
-                    else if (isOz) { scaledNum *= 28.35; outUnit = 'g'; useFraction = false; }
-                    else if (isLb) { 
-                        scaledNum *= 454; 
-                        if (scaledNum >= 1000) {
-                            scaledNum /= 1000;
-                            outUnit = 'kg';
-                        } else {
-                            outUnit = 'g';
-                        }
-                        useFraction = false; 
+                    else if (isFlOz) { scaledNum *= 30; outUnit = 'ml'; useFraction = false; }
+                    else if (isCup) { scaledNum *= 240; outUnit = 'ml'; useFraction = false; }
+                    else if (isPt) { scaledNum *= 475; outUnit = 'ml'; useFraction = false; }
+                    else if (isQt) { scaledNum *= 950; outUnit = 'ml'; useFraction = false; }
+                    else if (isGal) { scaledNum *= 3.8; outUnit = 'L'; useFraction = false; }
+                    else if (isOz) { scaledNum *= 28; outUnit = 'g'; useFraction = false; }
+                    else if (isLb) { scaledNum *= 454; outUnit = 'g'; useFraction = false; }
+                    else if (isIn) { scaledNum *= 2.5; outUnit = 'cm'; useFraction = false; }
+                    else if (isF) {
+                        scaledNum = (scaledNum - 32) * 5 / 9;
+                        scaledNum = Math.round(scaledNum / 10) * 10;
+                        outUnit = '°C';
+                        useFraction = false;
                     }
                     
                     if (!useFraction) {
-                        if (outUnit === 'kg' || outUnit === 'L') {
+                        // Smart Formatting Rollovers
+                        if (outUnit === 'ml' && scaledNum >= 1000) {
+                            scaledNum /= 1000;
+                            outUnit = 'L';
+                        }
+                        if (outUnit === 'g' && scaledNum >= 1000) {
+                            scaledNum /= 1000;
+                            outUnit = 'kg';
+                        }
+
+                        // Decimal strictness
+                        if (outUnit === 'L') {
+                            scaledNum = Number(scaledNum.toFixed(1));
+                        } else if (outUnit === 'kg') {
                             scaledNum = Number(scaledNum.toFixed(2));
-                        } else {
+                        } else if (outUnit === 'ml' || outUnit === 'g' || outUnit === '°C') {
                             scaledNum = Math.round(scaledNum);
+                        } else {
+                            // Default fallback e.g. for cm or gal
+                            scaledNum = Number(scaledNum.toFixed(1));
                         }
                     }
                 } else {
