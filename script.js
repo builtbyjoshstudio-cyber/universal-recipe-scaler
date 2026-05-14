@@ -133,8 +133,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         recipeOutput.innerHTML = ''; // Clear previous output
 
-        const unitRegex = /(\d+\s+\d+\/\d+|\d+\/\d+|\d*\.\d+|\d+)\s*(cups?|tbsp|tsp|fl\s*oz|oz|grams?|g|ml|lbs?|pinch|dash|cloves?|pieces?)/i;
-        const numberRegex = /^(\s*)(\d+\s+\d+\/\d+|\d+\/\d+|\d*\.\d+|\d+)/;
+        const unitRegex = /(\d+\s+\d+\/\d+|\d+\/\d+|\d*\.\d+|\d+)\s*(cups?|tablespoons?|tbsps?\.?|teaspoons?|tsps?\.?|fluid\s*ounces?|fl\.?\s*oz\.?|ounces?|ozs?\.?|grams?|g\.?|milliliters?|ml\.?|pounds?|lbs?\.?|pinch(?:es)?|dash(?:es)?|cloves?|pieces?)\b/gi;
+        const startNumberRegex = /^(\s*)(\d+\s+\d+\/\d+|\d+\/\d+|\d*\.\d+|\d+)(?!\s*(?:cups?|tablespoons?|tbsps?\.?|teaspoons?|tsps?\.?|fluid\s*ounces?|fl\.?\s*oz\.?|ounces?|ozs?\.?|grams?|g\.?|milliliters?|ml\.?|pounds?|lbs?\.?|pinch(?:es)?|dash(?:es)?|cloves?|pieces?)\b)/i;
 
         lines.forEach(line => {
             if (!line.trim()) {
@@ -143,59 +143,69 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             let processedLine = line;
-            let unitMatch = unitRegex.exec(line);
-            
-            if (unitMatch) {
-                const originalNumStr = unitMatch[1];
+
+            // Globally replace all quantities with known units
+            processedLine = processedLine.replace(unitRegex, (match, originalNumStr, unitStr) => {
                 let num = parseNumber(originalNumStr);
-                let unitStr = unitMatch[2];
+                if (isNaN(num)) return match;
+
                 let unit = unitStr.toLowerCase();
-                
-                if (!isNaN(num)) {
-                    let scaledNum = num * currentMultiplier;
-                    let outUnit = unitStr;
-                    let useFraction = true;
+                let scaledNum = num * currentMultiplier;
+                let outUnit = unitStr; // preserve original case if possible
+                let useFraction = true;
 
-                    if (convertToMetric) {
-                        if (unit === 'cup' || unit === 'cups') { scaledNum *= 240; outUnit = 'ml'; useFraction = false; }
-                        else if (unit === 'tbsp') { scaledNum *= 15; outUnit = 'ml'; useFraction = false; }
-                        else if (unit === 'tsp') { scaledNum *= 5; outUnit = 'ml'; useFraction = false; }
-                        else if (unit === 'oz') { scaledNum *= 28.35; outUnit = 'g'; useFraction = false; }
-                        else if (unit === 'fl oz' || unit === 'fl. oz.') { scaledNum *= 29.57; outUnit = 'ml'; useFraction = false; }
-                        else if (unit === 'lb' || unit === 'lbs') { scaledNum *= 453.59; outUnit = 'g'; useFraction = false; }
-                        
-                        if (!useFraction) scaledNum = Math.round(scaledNum);
-                    } else {
-                        // Metric to US Customary
-                        if (unit === 'ml') {
-                            let cups = scaledNum / 240;
-                            if (cups >= 0.25) { scaledNum = cups; outUnit = scaledNum <= 1 ? 'cup' : 'cups'; }
-                            else {
-                                let tbsp = scaledNum / 15;
-                                if (tbsp >= 0.5) { scaledNum = tbsp; outUnit = 'tbsp'; }
-                                else { scaledNum = scaledNum / 5; outUnit = 'tsp'; }
-                            }
-                        } else if (unit === 'g' || unit === 'gram' || unit === 'grams') {
-                            scaledNum /= 28.35; outUnit = 'oz';
-                        }
-                    }
+                // Normalize unit for conversion logic
+                let isCup = /^(cups?)$/.test(unit);
+                let isTbsp = /^(tablespoons?|tbsps?\.?)$/.test(unit);
+                let isTsp = /^(teaspoons?|tsps?\.?)$/.test(unit);
+                let isOz = /^(ounces?|ozs?\.?)$/.test(unit);
+                let isFlOz = /^(fluid\s*ounces?|fl\.?\s*oz\.?)$/.test(unit);
+                let isLb = /^(pounds?|lbs?\.?)$/.test(unit);
+                let isG = /^(grams?|g\.?)$/.test(unit);
+                let isMl = /^(milliliters?|ml\.?)$/.test(unit);
 
-                    let valStr = useFraction ? toFraction(scaledNum) : scaledNum.toString();
+                if (convertToMetric) {
+                    if (isCup) { scaledNum *= 240; outUnit = 'ml'; useFraction = false; }
+                    else if (isTbsp) { scaledNum *= 15; outUnit = 'ml'; useFraction = false; }
+                    else if (isTsp) { scaledNum *= 5; outUnit = 'ml'; useFraction = false; }
+                    else if (isOz) { scaledNum *= 28.35; outUnit = 'g'; useFraction = false; }
+                    else if (isFlOz) { scaledNum *= 29.57; outUnit = 'ml'; useFraction = false; }
+                    else if (isLb) { scaledNum *= 453.59; outUnit = 'g'; useFraction = false; }
                     
-                    const before = line.substring(0, unitMatch.index);
-                    const after = line.substring(unitMatch.index + originalNumStr.length + unitStr.length);
-                    processedLine = `${before}<span class="highlight">${valStr} ${outUnit}</span>${after}`;
-                }
-            } else {
-                let match = numberRegex.exec(line);
-                if (match) {
-                    const spaces = match[1];
-                    const num = parseNumber(match[2]);
-                    if (!isNaN(num)) {
-                        const fractionStr = toFraction(num * currentMultiplier);
-                        const after = line.substring(match[0].length);
-                        processedLine = `${spaces}<span class="highlight">${fractionStr}</span>${after}`;
+                    if (!useFraction) scaledNum = Math.round(scaledNum);
+                } else {
+                    // Metric to US Customary
+                    if (isMl) {
+                        let cups = scaledNum / 240;
+                        if (cups >= 0.25) { scaledNum = cups; outUnit = scaledNum <= 1 ? 'cup' : 'cups'; }
+                        else {
+                            let tbsp = scaledNum / 15;
+                            if (tbsp >= 0.5) { scaledNum = tbsp; outUnit = 'tbsp'; }
+                            else { scaledNum = scaledNum / 5; outUnit = 'tsp'; }
+                        }
+                    } else if (isG) {
+                        scaledNum /= 28.35; outUnit = 'oz';
                     }
+                }
+
+                let valStr = useFraction ? toFraction(scaledNum) : scaledNum.toString();
+                // Ensure a single space between number and unit
+                return `<span class="highlight">${valStr} ${outUnit}</span>`;
+            });
+
+            // Check if there's a unitless number at the start of the line that wasn't covered above
+            let startMatch = startNumberRegex.exec(processedLine);
+            if (startMatch) {
+                const spaces = startMatch[1];
+                const originalNumStr = startMatch[2];
+                const num = parseNumber(originalNumStr);
+                if (!isNaN(num)) {
+                    const scaledNum = num * currentMultiplier;
+                    const fractionStr = toFraction(scaledNum);
+                    
+                    processedLine = processedLine.substring(0, startMatch.index) + 
+                                    spaces + `<span class="highlight">${fractionStr}</span>` + 
+                                    processedLine.substring(startMatch.index + spaces.length + originalNumStr.length);
                 }
             }
 
