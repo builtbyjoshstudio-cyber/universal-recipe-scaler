@@ -133,8 +133,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         recipeOutput.innerHTML = ''; // Clear previous output
 
-        const unitRegex = /(\d+\s+\d+\/\d+|\d+\/\d+|\d*\.\d+|\d+)\s*(cups?|c\.?|tablespoons?|tbsps?\.?|teaspoons?|tsps?\.?|fluid\s*ounces?|fl\.?\s*oz\.?|ounces?|ozs?\.?|grams?|g\.?|milliliters?|ml\.?|pounds?|lbs?\.?|pinch(?:es)?|dash(?:es)?|cloves?|pieces?)\b/gi;
-        const startNumberRegex = /^(\s*)(\d+\s+\d+\/\d+|\d+\/\d+|\d*\.\d+|\d+)(?!\s*(?:cups?|c\.?|tablespoons?|tbsps?\.?|teaspoons?|tsps?\.?|fluid\s*ounces?|fl\.?\s*oz\.?|ounces?|ozs?\.?|grams?|g\.?|milliliters?|ml\.?|pounds?|lbs?\.?|pinch(?:es)?|dash(?:es)?|cloves?|pieces?)\b)/i;
+        const unitRegex = /(\d+\s+\d+\/\d+|\d+\/\d+|\d*\.\d+|\d+)\s*(quarts?|qts?\.?|pints?|pts?\.?|cups?|c\.?|tablespoons?|tbsps?\.?|teaspoons?|tsps?\.?|fluid\s*ounces?|fl\.?\s*oz\.?|ounces?|ozs?\.?|grams?|g\.?|milliliters?|ml\.?|pounds?|lbs?\.?|pinch(?:es)?|dash(?:es)?|cloves?|pieces?)\b/gi;
+        const startNumberRegex = /^(\s*)(\d+\s+\d+\/\d+|\d+\/\d+|\d*\.\d+|\d+)(?!\s*(?:quarts?|qts?\.?|pints?|pts?\.?|cups?|c\.?|tablespoons?|tbsps?\.?|teaspoons?|tsps?\.?|fluid\s*ounces?|fl\.?\s*oz\.?|ounces?|ozs?\.?|grams?|g\.?|milliliters?|ml\.?|pounds?|lbs?\.?|pinch(?:es)?|dash(?:es)?|cloves?|pieces?)\b)/i;
 
         lines.forEach(line => {
             if (!line.trim()) {
@@ -155,6 +155,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 let useFraction = true;
 
                 // Normalize unit for conversion logic
+                let isQt = /^(quarts?|qts?\.?)$/.test(unit);
+                let isPt = /^(pints?|pts?\.?)$/.test(unit);
                 let isCup = /^(cups?|c\.?)$/.test(unit);
                 let isTbsp = /^(tablespoons?|tbsps?\.?)$/.test(unit);
                 let isTsp = /^(teaspoons?|tsps?\.?)$/.test(unit);
@@ -164,7 +166,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 let isMl = /^(milliliters?|ml\.?)$/.test(unit);
 
                 if (convertToMetric) {
-                    if (isCup) { scaledNum *= 240; outUnit = 'ml'; useFraction = false; }
+                    if (isQt) {
+                        scaledNum *= 946;
+                        if (scaledNum >= 1000) { scaledNum /= 1000; outUnit = 'L'; }
+                        else { outUnit = 'ml'; }
+                        useFraction = false;
+                    }
+                    else if (isPt) { scaledNum *= 473; outUnit = 'ml'; useFraction = false; }
+                    else if (isCup) { scaledNum *= 240; outUnit = 'ml'; useFraction = false; }
                     else if (isTbsp) { scaledNum *= 15; outUnit = 'ml'; useFraction = false; }
                     else if (isTsp) { scaledNum *= 5; outUnit = 'ml'; useFraction = false; }
                     else if (isOz) { scaledNum *= 28.35; outUnit = 'g'; useFraction = false; }
@@ -180,7 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     
                     if (!useFraction) {
-                        if (outUnit === 'kg') {
+                        if (outUnit === 'kg' || outUnit === 'L') {
                             scaledNum = Number(scaledNum.toFixed(2));
                         } else {
                             scaledNum = Math.round(scaledNum);
