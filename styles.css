@@ -122,6 +122,9 @@ header p {
     border: 1.5px solid var(--border-light);
     border-radius: 22px;
     box-shadow: var(--glass-shadow);
+    height: auto;
+    min-height: min-content;
+    overflow: visible;
 }
 
 .content-grid {
@@ -131,7 +134,7 @@ header p {
 }
 
 .controls-card {
-    padding: 1.5rem;
+    padding: 1.5rem 1.5rem 2.5rem;
     margin-bottom: 2rem;
     display: flex;
     flex-wrap: wrap;
@@ -252,8 +255,8 @@ textarea:focus {
 }
 
 .output-area {
-    padding: 1.5rem;
-    height: 100%;
+    padding: 1.5rem 1.5rem 2.5rem;
+    height: auto;
 }
 
 .output-area h2 {
@@ -286,7 +289,7 @@ textarea:focus {
 /* Tips Section */
 .tips-section {
     margin-top: 2rem;
-    padding: 1.5rem;
+    padding: 1.5rem 1.5rem 2.5rem;
 }
 
 .tips-section h2 {
@@ -318,7 +321,7 @@ textarea:focus {
 
 /* Sidebar */
 .sidebar {
-    padding: 1.5rem;
+    padding: 1.5rem 1.5rem 2.5rem;
     height: fit-content;
 }
 
