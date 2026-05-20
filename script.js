@@ -35,7 +35,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const originalServings = document.getElementById('original-servings');
     const targetServings = document.getElementById('target-servings');
     const currentMultiplierDisplay = document.getElementById('current-multiplier-display');
-    const unitToggle = document.getElementById('unit-toggle');
+    const unitImperialBtn = document.getElementById('unit-imperial');
+    const unitMetricBtn = document.getElementById('unit-metric');
+    let currentUnit = 'imperial';
     const copyBtn = document.getElementById('copy-btn');
     const printBtn = document.getElementById('print-btn');
 
@@ -133,7 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const convertToMetric = unitToggle ? unitToggle.checked : false;
+        const convertToMetric = (currentUnit === 'metric');
         const lines = text.split('\n');
         
         recipeOutput.innerHTML = ''; // Clear previous output
@@ -310,9 +312,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Event Listeners
+    function setUnitSystem(unit) {
+        currentUnit = unit;
+        if (unit === 'metric') {
+            unitMetricBtn.classList.add('active');
+            unitImperialBtn.classList.remove('active');
+        } else {
+            unitImperialBtn.classList.add('active');
+            unitMetricBtn.classList.remove('active');
+        }
+        scaleRecipe();
+    }
+
+    if (unitImperialBtn) unitImperialBtn.addEventListener('click', () => setUnitSystem('imperial'));
+    if (unitMetricBtn) unitMetricBtn.addEventListener('click', () => setUnitSystem('metric'));
     recipeInput.addEventListener('input', scaleRecipe);
-    if (unitToggle) unitToggle.addEventListener('change', scaleRecipe);
 
     scaleButtons.forEach(btn => {
         btn.addEventListener('click', (e) => {

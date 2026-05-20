@@ -431,66 +431,46 @@ textarea:focus {
     transform: scale(1.02);
 }
 
-/* Unit Toggle */
-.unit-toggle-container {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-left: auto;
+/* ---------- TYNKR STUDIO UNIT MODULE ---------- */
+.tynkr-unit-toggle-wrapper {
+  display: inline-flex;
+  padding: 4px;
+  border: 1px solid var(--border-light);
+  border-radius: 14px;
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  margin-left: auto;
+}
+.tynkr-unit-btn {
+  padding: 8px 14px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background .2s ease, color .2s ease;
+}
+.tynkr-unit-btn:hover {
+  color: var(--text-light);
+  background: var(--primary-hover);
+}
+.tynkr-unit-btn.active {
+  background: var(--primary-color);
+  color: #fff;
 }
 
-.unit-label {
-    font-size: 0.9rem;
-    font-weight: 600;
-}
-
-.switch {
-    position: relative;
-    display: inline-block;
-    width: 44px;
-    height: 24px;
-}
-
-.switch input { 
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background-color: rgba(128, 128, 128, 0.2);
-    transition: .4s;
-    border: 1px solid var(--border-light);
-}
-
-.slider:before {
-    position: absolute;
-    content: "";
-    height: 16px;
-    width: 16px;
-    left: 3px;
-    bottom: 3px;
-    background-color: var(--primary-color);
-    transition: .4s;
-}
-
-input:checked + .slider {
-    background-color: rgba(128, 128, 128, 0.4);
-}
-
-input:checked + .slider:before {
-    transform: translateX(20px);
-}
-
-.slider.round {
-    border-radius: 24px;
-}
-
-.slider.round:before {
-    border-radius: 50%;
+/* ---------- FLUID LAYOUT OVERHAUL ---------- */
+.glass-panel, .results-container, .output-area, .recipe-workarea {
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+  padding-bottom: 3rem !important;
 }
 
 /* Action Buttons */
