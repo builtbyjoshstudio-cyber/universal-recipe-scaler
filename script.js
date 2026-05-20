@@ -123,8 +123,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const text = recipeInput.value;
         localStorage.setItem('savedRecipe', text);
 
+        const eggTipBox = document.getElementById('egg-tip-box');
+        const volumetricWarningBox = document.getElementById('volumetric-warning-box');
+
         if (!text.trim()) {
             recipeOutput.innerHTML = '<p class="placeholder-text">Your scaled ingredients will appear here...</p>';
+            if (eggTipBox) eggTipBox.style.display = 'none';
+            if (volumetricWarningBox) volumetricWarningBox.style.display = 'none';
             return;
         }
 
@@ -132,6 +137,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const lines = text.split('\n');
         
         recipeOutput.innerHTML = ''; // Clear previous output
+        
+        let hasFractionalEggs = false;
 
         const unitRegex = /(\d+\s+\d+\/\d+|\d+\/\d+|\d*\.\d+|\d+)\s*(cups?|c\.?|tablespoons?|tbsps?\.?|teaspoons?|tsps?\.?|fluid\s*ounces?|fl\.?\s*oz\.?|ounces?|ozs?\.?|grams?|g\.?|milliliters?|ml\.?|pounds?|lbs?\.?|quarts?|qts?\.?|pints?|pts?\.?|gallons?|gals?\.?|°?f|fahrenheit|inches|inch|in\.?|pinch(?:es)?|dash(?:es)?|cloves?|pieces?)\b/gi;
         const startNumberRegex = /^(\s*)(\d+\s+\d+\/\d+|\d+\/\d+|\d*\.\d+|\d+)(?!\s*(?:cups?|c\.?|tablespoons?|tbsps?\.?|teaspoons?|tsps?\.?|fluid\s*ounces?|fl\.?\s*oz\.?|ounces?|ozs?\.?|grams?|g\.?|milliliters?|ml\.?|pounds?|lbs?\.?|quarts?|qts?\.?|pints?|pts?\.?|gallons?|gals?\.?|°?f|fahrenheit|inches|inch|in\.?|pinch(?:es)?|dash(?:es)?|cloves?|pieces?)\b)/i;
@@ -143,6 +150,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             let processedLine = line;
+            const isEggLine = /\beggs?\b/i.test(line);
+            let lineHasFraction = false;
 
             // Globally replace all quantities with known units
             processedLine = processedLine.replace(unitRegex, (match, originalNumStr, unitStr) => {
@@ -157,6 +166,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 let scaledNum = num;
                 if (!isF && !isIn) {
                     scaledNum = num * currentMultiplier;
+                }
+
+                if (isEggLine) {
+                    const isFraction = Math.abs(scaledNum - Math.round(scaledNum)) > 0.01;
+                    if (isFraction) {
+                        lineHasFraction = true;
+                        hasFractionalEggs = true;
+                    }
                 }
 
                 let outUnit = unitStr; // preserve original case if possible
@@ -247,6 +264,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     const scaledNum = num * currentMultiplier;
                     const fractionStr = toFraction(scaledNum);
                     
+                    if (isEggLine) {
+                        const isFraction = Math.abs(scaledNum - Math.round(scaledNum)) > 0.01;
+                        if (isFraction) {
+                            lineHasFraction = true;
+                            hasFractionalEggs = true;
+                        }
+                    }
+
                     processedLine = processedLine.substring(0, startMatch.index) + 
                                     spaces + `<span class="highlight">${fractionStr}</span>` + 
                                     processedLine.substring(startMatch.index + spaces.length + originalNumStr.length);
@@ -256,6 +281,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // Create interactive checkbox row
             const label = document.createElement('label');
             label.className = 'recipe-line';
+            if (isEggLine && lineHasFraction) {
+                label.classList.add('fractional-egg-row');
+            }
             
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
@@ -269,6 +297,17 @@ document.addEventListener('DOMContentLoaded', () => {
             
             recipeOutput.appendChild(label);
         });
+
+        // Set egg tip display state
+        if (eggTipBox) {
+            eggTipBox.style.display = hasFractionalEggs ? 'block' : 'none';
+        }
+
+        // Volumetric scaling check
+        const hasVolumetricUnits = /\b(cups?|tsp|tbsp)\b/i.test(text);
+        if (volumetricWarningBox) {
+            volumetricWarningBox.style.display = (currentMultiplier >= 3 && hasVolumetricUnits) ? 'block' : 'none';
+        }
     }
 
     // Event Listeners
